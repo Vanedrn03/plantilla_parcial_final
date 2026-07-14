@@ -1,4 +1,4 @@
-# [Nombre] [Carné]
+# [Vanessa Saraí Durán Cruz] [00025822]
 
 ## Indicaciones
 
@@ -26,6 +26,8 @@ Actualmente:
 
 **Instrucción:** Explique la causa del problema y resuélvalo.
 
+**La principal causa era el tipo ya que lo estabamos declarando previamente como un Genre pero luego lo estabamos declarando como string por ello el servidor fallaba, ya que no lo habiamos declarado de la misma manera en el repositorio.**
+
 ---
 
 ### 2. Error al volver a prestar un libro (10%)
@@ -34,6 +36,8 @@ Un usuario reportó que al pedir prestado el libro **The Selfish Gene**, devolve
 
 **Instrucción:** Explique la causa del problema y resuélvalo.
 
+**Pasaba o daba error porque al regresarlo nunca lo volviamos a poner disponible, entonces como solo era uno el servidor lanzaba el error que no lo habiamos devuelto**
+
 ---
 
 ### 3. Cantidad de libros por género (10%)
@@ -41,6 +45,8 @@ Un usuario reportó que al pedir prestado el libro **The Selfish Gene**, devolve
 Existe un endpoint que devuelve la cantidad de libros disponibles por género. Sin embargo, actualmente dicho endpoint falla.
 
 **Instrucción:** Explique la causa del problema y resuélvalo.
+
+**El error que daba era porque al buscarlo lo hacian siempre o quizas con minusculas, o mezcla de mayus y minus, sin embargo el genero en la base de datos esta en mayuscula, ahora forzamos a que siempre busque en mayuscula al convertirlo con la funcion genre.toUpperCase())**
 
 ---
 
@@ -53,6 +59,12 @@ GET /books?id=ed16ed1e-7017-4697-a08a-d28c09a74acf
 ```
 
 **Instrucción:** Explique la causa del problema.
+
+**Falla ya que no es la manera correcta de poder traer un libro esta deberia de ser:**
+
+```http
+GET /books/ed16ed1e-7017-4697-a08a-d28c09a74acf
+```
 
 ---
 
@@ -73,6 +85,8 @@ QA ha reportado que el siguiente payload enviado al endpoint `POST /books` provo
 
 **Instrucción:** Explique la causa del problema.
 
+**Porque no estamos enviando el tipo de dato correcto en el genero del libro**
+
 ---
 
 ### 6. Devolución de libros no prestados (20%)
@@ -84,5 +98,28 @@ QA ha reportado que un usuario es capaz de devolver libros que nunca ha solicita
 - Confirme si este comportamiento es realmente posible.
 - Si es posible, explique la causa y resuelva el problema.
 - Si no es posible, explique por qué, haciendo referencia al código correspondiente.
+
+**Este error pasaba ya que no teniamos declarado esta validacion, ahora si quieren devolver el libro traemos el estado del libro y si esta persona no a prestado ese libro y quiere devolver ese libro le decimos que ese usuario no a usado ese libro. El codigo modificado fue en Movement Service**
+
+```java
+if (type == MovementType.BORROWING) {
+        if (!book.isAvailable()) {
+        throw new RuntimeException("Book is not available");
+            }
+                    book.setAvailableCount(book.getAvailableCount() - 1);
+        if (book.getAvailableCount() == 0) {
+        book.setAvailable(false);
+            }
+} else {
+        Movement lastMovement = movementRepository
+        .findTopByLectorAndBookOrderByTimestampDesc(lector, book)
+        .orElse(null);
+            if (lastMovement == null || lastMovement.getType() != MovementType.BORROWING) {
+        throw new RuntimeException("This lector has not borrowed this book");
+            }
+                    book.setAvailableCount(book.getAvailableCount() + 1);
+        book.setAvailable(true);
+        }
+```
 
 ---
